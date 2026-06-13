@@ -9,6 +9,7 @@ import (
 	"sort"
 
 	"gdu/parser"
+	"gdu/help"
 )
 
 // DirSize represents a directory and its calculated size.
@@ -54,10 +55,12 @@ func formatBytes(b int64) string {
 
 func main() {
 	if len(os.Args) < 2 {
-		fmt.Println("Usage: go run main.go <directory_path>")
+		fmt.Println("Usage:\tgdu <directory_path>")
+		fmt.Println("Help:\tgdu -h")
 		return
 	}
-	rootPath := os.Args[1]
+	if os.Args[1] != "-h" {
+		rootPath := os.Args[1]
 
 	var dirSizes []DirSize
 
@@ -107,4 +110,9 @@ func main() {
 			fmt.Printf("%-12s %s\n", parser.FormatBytes(ds.Size), relPath)
 		}
 	}
+	} else {
+		help.GduHelp()
+	}
+
+	
 }
