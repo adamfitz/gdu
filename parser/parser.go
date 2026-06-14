@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"time"
 	"unicode/utf8"
 )
 
@@ -74,7 +75,9 @@ func WalkDirSize(path string) (int64, error) {
 func DirResult(rootPath string) error {
 	var dirSizes []DirSize
 
-	fmt.Println("Calculating disk usage for: ", os.Args[1])
+	// timer
+	spin := newSpinner([]string{"|", "/", "-", "\\"}, 100*time.Millisecond)
+	spin.Start()
 
 	err := filepath.WalkDir(rootPath, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
@@ -101,10 +104,14 @@ func DirResult(rootPath string) error {
 		return dirSizes[i].Size < dirSizes[j].Size
 	})
 
+	spin.Stop()
+
 	// Print in tree-like format
 	fmt.Printf("Disk usage for %s (sorted by size):\n", rootPath)
+	fmt.Println("")
 
 	for idx, ds := range dirSizes {
+
 		relPath, err := filepath.Rel(rootPath, ds.Path)
 		if err != nil {
 			relPath = ds.Path // Fallback if relative path calculation fails
