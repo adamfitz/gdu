@@ -72,19 +72,19 @@ func WalkDirSize(path string) (int64, error) {
 }
 
 // Return Dir Size result
-func DirResult(rootPath string) error {
+func DirResult(rootPath string, flag string) error {
 	var dirSizes []DirSize
 
 	// timer
-	spin := newSpinner([]string{"|", "/", "-", "\\"}, 100*time.Millisecond)
+	spin := defaultSpinner(defaultChars, 100*time.Millisecond)
 	spin.Start()
 
 	err := filepath.WalkDir(rootPath, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			log.Printf("Error accessing %s: %v", path, err)
-			return nil // Continue walking even if an error occurs for one entry
+			return nil
 		}
-		if d.IsDir() {
+		if d.IsDir() && path != rootPath {
 			size, err := dirSize(path)
 			if err != nil {
 				log.Printf("Error calculating size for %s: %v", path, err)
@@ -99,39 +99,52 @@ func DirResult(rootPath string) error {
 		log.Fatalf("Error walking directory: %v", err)
 	}
 
-	// Sort directories by size in ascending order
-	sort.Slice(dirSizes, func(i, j int) bool {
-		return dirSizes[i].Size < dirSizes[j].Size
-	})
+	rootSize, err := dirSize(rootPath)
+	if err != nil {
+		log.Fatalf("Error calculating root size: %v", err)
+	}
+
+	switch flag {
+	case "-a":
+		sortBySizeAscending(dirSizes)
+	case "-d":
+		sortBySizeDescending(dirSizes)
+	default:
+		sortBySizeAscending(dirSizes)
+	}
 
 	spin.Stop()
 
-	// Print in tree-like format
 	fmt.Printf("Disk usage for %s (sorted by size):\n", rootPath)
 	fmt.Println("")
 
-	for idx, ds := range dirSizes {
-
+	for _, ds := range dirSizes {
 		relPath, err := filepath.Rel(rootPath, ds.Path)
 		if err != nil {
-			relPath = ds.Path // Fallback if relative path calculation fails
+			relPath = ds.Path
 		}
-		// if a hidden file add a space to align
 		firstRune, _ := utf8.DecodeRuneInString(relPath)
 		if string(firstRune) != "." {
 			relPath = " " + relPath
 		}
-
-		if relPath == "." { // Root directory itself
-			relPath = rootPath
-		}
-		// if its the last element then add a carriage return before printing
-		if idx == len(dirSizes)-1 {
-			fmt.Printf("\n%-12s %s\n", formatBytes(ds.Size), relPath)
-		} else {
-			fmt.Printf("%-12s %s\n", formatBytes(ds.Size), relPath)
-		}
+		fmt.Printf("%-12s %s\n", formatBytes(ds.Size), relPath)
 	}
 
+	fmt.Printf("\n%-12s %s\n", formatBytes(rootSize), rootPath)
+
 	return nil
+}
+
+// sortBySize sorts a slice of DirSize in ascending order of Size.
+func sortBySizeAscending(dirSizes []DirSize) {
+	sort.Slice(dirSizes, func(i, j int) bool {
+		return dirSizes[i].Size < dirSizes[j].Size
+	})
+}
+
+// sortBySize sorts a slice of DirSize in descending order of Size.
+func sortBySizeDescending(dirSizes []DirSize) {
+	sort.Slice(dirSizes, func(i, j int) bool {
+		return dirSizes[i].Size > dirSizes[j].Size
+	})
 }

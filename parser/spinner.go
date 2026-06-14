@@ -14,7 +14,9 @@ type spinner struct {
 	stop   chan struct{}
 }
 
-func newSpinner(chars []string, delay time.Duration) *spinner {
+var defaultChars = []string{"|", "/", "-", "\\"}
+
+func defaultSpinner(chars []string, delay time.Duration) *spinner {
 	return &spinner{
 		chars: chars,
 		delay: delay,

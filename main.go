@@ -17,8 +17,11 @@ func main() {
 	if os.Args[1] != "-h" {
 		rootPath := os.Args[1]
 
-		parser.DirResult(rootPath)
-
+		if len(os.Args) > 2 {
+			parser.DirResult(rootPath, os.Args[2])
+		} else {
+			parser.DirResult(rootPath, "")
+		}
 	} else {
 		help.GduHelp()
 	}
