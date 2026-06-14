@@ -1,3 +1,3 @@
-module gds
+module gdu
 
 go 1.24.3
